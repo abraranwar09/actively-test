@@ -1,14 +1,29 @@
-FROM node:16
-# Installing libvips-dev for sharp Compatability
-RUN apt-get update && apt-get install libvips-dev -y
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-WORKDIR /opt/
-COPY ./package.json ./yarn.lock ./
-ENV PATH /opt/node_modules/.bin:$PATH
-RUN yarn config set network-timeout 600000 -g && yarn install
-WORKDIR /opt/app
-COPY ./ .
+# Use the official lightweight Node.js 16 image.
+FROM node:16-slim
+
+ENV PORT 1337
+ENV HOST 0.0.0.0
+ENV NODE_ENV=production
+
+# Create app directory.
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+
+# Copy application dependency manifests to the container image.
+COPY package*.json ./
+COPY yarn.lock  ./
+
+# Install production dependencies.
+RUN yarn install --production
+
+# Copy local code to the container image.
+COPY . ./
+
+# Build Strapi
 RUN yarn build
-EXPOSE ${PORT}
-CMD ["yarn", "start"]
+
+# Run the web service on container startup.
+EXPOSE 1337
+
+CMD [ "yarn", "start" ]
